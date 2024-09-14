@@ -107,28 +107,69 @@
                     </h2>
                   </div>
                   <div class="relative mt-6 flex-1 px-4 sm:px-6">
-                    <form class="">
+                    <form @submit.prevent="handleUpdateSettings">
                       <div class="mb-5">
                         <label class="form-label mb-2">Currency symbol</label>
                         <input
                           class="form-control"
                           placeholder="Enter the currency symbol"
-                          v-model="settings.currencySymbol"
+                          v-model="settingsForm.currencySymbol"
+                          required
                         />
                       </div>
                       <div class="mb-5">
                         <label class="form-label mb-2">Trip title</label>
-                        <input class="form-control" placeholder="Enter the trip title" v-model="settings.tripTitle" />
+                        <input
+                          class="form-control"
+                          placeholder="Enter the trip title"
+                          v-model="settingsForm.tripTitle"
+                          required
+                        />
                       </div>
                       <div class="mb-5">
                         <label class="form-label mb-2">Trip Members</label>
-                        <div v-for="(member, index) in settings.members" :key="index">
+                        <div
+                          v-for="(member, index) in settingsForm.members.filter(member => !member.deleted)"
+                          :key="member.id"
+                          class="flex items-center gap-3"
+                        >
                           <input
                             class="form-control mb-3"
                             placeholder="Enter the member"
-                            v-model="settings.members[index]"
+                            v-model="settingsForm.members[settingsForm.members.findIndex(loopMember => loopMember.id === member.id)].name"
+                            required
                           />
+                          <button
+                            type="button"
+                            @click="deleteMemberFromSettings(member, index)"
+                            class="w-6 h-6 text-xs font-bold text-white bg-red-500 border-2 border-white rounded-full mb-3"
+                          >
+                            <i class="fa fa-minus"></i>
+                          </button>
                         </div>
+                        <button
+                          @click="settingsForm.members.push({name : ''})"
+                          class="ms-auto underline text-primary text-xs"
+                          type="button"
+                        >
+                          <i class="fa fa-plus"></i> Add new member
+                        </button>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <button type="submit" class="button button-primary">
+                          <i class="fa fa-check me-2"></i>
+                          Update settings
+                        </button>
+                        <button
+                          type="button"
+                          @click="deleteAllTransactions"
+                          :disabled="!transactions.length"
+                          :class="{'cursor-not-allowed' : !transactions.length}"
+                          class="button button-primary bg-red-500"
+                        >
+                          <i class="fa fa-trash me-2"></i>
+                          Delete all transactions
+                        </button>
                       </div>
                     </form>
                   </div>
@@ -299,7 +340,7 @@
                 class="relative rounded-xl border shadow-xl border-1 px-5 py-5"
               >
                 <button
-                  @click="removeTransaction(index)"
+                  @click="deleteTransaction(index)"
                   class="absolute inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-500 border-2 border-white rounded-full -top-1 -end-1"
                 >
                   <i class="fa fa-minus"></i>
@@ -311,13 +352,10 @@
                 <h3 class="text-md font-semibold mt-5">
                   <span class="text-secondary">Paying members</span>
                 </h3>
-                <h4
-                  v-for="(payment, memberId) in transaction.payments"
-                  class="text-sm font-semibold mt-5 border-b border-1 border-gray-300 pb-5"
-                >
+                <h4 v-for="(payment, memberId) in transaction.payments" class="text-sm font-semibold mt-5">
                   <span class="text-sm">{{getMemberById(memberId).name}} ({{formatMoney(payment)}})</span>
                 </h4>
-                <h3 class="text-md font-semibold mt-5">
+                <h3 class="text-md font-semibold mt-5 border-t border-1 border-gray-300 pt-5">
                   <span class="text-secondary">Consuming members</span>
                 </h3>
                 <h4 v-for="(consumptions, memberId) in transaction.consumptions" class="text-sm font-semibold mt-5">
@@ -331,27 +369,28 @@
                 id="balance-item"
                 class="rounded-xl border shadow-xl border-1 px-5 py-5"
               >
-                <h3 class="text-lg font-semibold underline text-primary text-center">{{getMemberById(memberId).name}}</h3>
+                <h3 class="text-lg font-semibold underline text-primary text-center">
+                  {{getMemberById(memberId).name}}
+                  <span v-if="getMemberById(memberId).deleted" class="text-red-500 text-sm">(Deleted)</span>
+                </h3>
                 <h3 class="text-md font-semibold mt-5">
                   <span class="text-secondary">Total payments made : </span>
                   <span class="text-gray-700">{{formatMoney(balance.payments)}}</span>
                 </h3>
                 <h3 class="text-md font-semibold mt-5">
-                  <span class="text-secondary">Total credits to others : </span>
-                  <span class="text-gray-700">{{formatMoney(balance.credits)}}</span>
-                </h3>
-                <h3 class="text-md font-semibold mt-5">
-                  <span class="text-secondary">Total debts from others : </span>
-                  <span class="text-gray-700">{{formatMoney(balance.debts)}}</span>
+                  <span class="text-secondary">Table balance : </span>
+                  <span class="text-gray-700">{{formatMoney(balance.balance)}}</span>
                 </h3>
                 <h3 class="text-md font-semibold mt-5">
                   <span :class="[balance.balance >= 0 ? 'text-green-500' : 'text-red-500']">
                     <span v-if="balance.balance === 0">{{getMemberById(memberId).name}} is good</span>
                     <span v-if="balance.balance > 0"
-                      >{{getMemberById(memberId).name}} should take {{formatMoney(balance.balance)}} from the table</span
+                      >{{getMemberById(memberId).name}} should take {{formatMoney(balance.balance)}} from the
+                      table</span
                     >
                     <span v-if="balance.balance < 0"
-                      >{{getMemberById(memberId).name}} should put {{formatMoney(Math.abs(balance.balance))}} in the table</span
+                      >{{getMemberById(memberId).name}} should put {{formatMoney(Math.abs(balance.balance))}} in the
+                      table</span
                     >
                   </span>
                 </h3>

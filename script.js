@@ -4,27 +4,28 @@ createApp({
   data() {
     return {
       settings: {
-        tripTitle: 'Chamal Trip',
+        tripTitle: 'Trip #1',
         currencySymbol: 'DHS',
         members: [
           {
-            id: 'zdi-1',
-            name: 'Zdi Mohammed',
+            id: 'member-1',
+            name: 'Hamid',
           },
           {
-            id: 'ba-kamal',
-            name: 'Ba Kamal',
+            id: 'member-2',
+            name: 'Mohamed',
           },
           {
-            id: '7mouda',
-            name: '7mouda',
+            id: 'member-3',
+            name: 'Kamal',
           },
           {
-            id: 'hajomar',
-            name: 'L7aj Omar',
+            id: 'member-4',
+            name: 'Omar',
           },
         ],
       },
+      settingsForm: {},
       form: {
         title: '',
         payments: {},
@@ -47,10 +48,19 @@ createApp({
       immediate: true,
       deep: true,
     },
+    settings: {
+      handler() {
+        this.settingsForm = _.cloneDeep(this.settings);
+        this.resetForm();
+        this.calculateMemberBalances();
+      },
+      immediate: true,
+      deep: true,
+    },
   },
   computed: {
     nonDeletedSettingsMembers() {
-      return this.settings.members.filter(member => !member.is_deleted);
+      return this.settings.members.filter(member => !member.deleted);
     },
   },
   methods: {
@@ -118,7 +128,7 @@ createApp({
       return Object.keys(transaction.consumptions).includes(member.id);
     },
     getMemberById(memberId) {
-      return this.settings.members.find(member => member.id == memberId);
+      return this.settings.members.find(member => member.id === memberId);
     },
     calculateMemberBalances() {
       for (const member of this.settings.members) {
@@ -126,29 +136,14 @@ createApp({
           .filter(transaction => this.memberIsPayer(transaction, member))
           .reduce((acc, transaction) => acc + transaction.payments[member.id], 0);
 
-        const credits = this.transactions
-          .filter(transaction => this.memberIsPayer(transaction, member))
-          .reduce(function (acc, transaction) {
-            const consumptions = { ...transaction.consumptions };
+        const balance = this.transactions.reduce(function (acc, transaction) {
+          const transactionBalance =
+            (transaction.payments[member.id] || 0) - (transaction.consumptions[member.id] || 0);
 
-            delete consumptions[member.id];
+          return acc + transactionBalance;
+        }, 0);
 
-            if (!Object.keys(consumptions).length) {
-              return acc;
-            }
-
-            const credit = Object.values(consumptions).reduce((acc, consumption) => acc + consumption);
-
-            return acc + credit;
-          }, 0);
-
-        const debts = this.transactions
-          .filter(transaction => !this.memberIsPayer(transaction, member) && this.memberIsConsumer(transaction, member))
-          .reduce((acc, transaction) => acc + transaction.consumptions[member.id], 0);
-
-        const balance = credits - debts;
-
-        this.balances[member.id] = { payments, credits, debts, balance };
+        this.balances[member.id] = { payments, balance };
       }
     },
     handleSubmit() {
@@ -174,12 +169,61 @@ createApp({
 
       this.resetForm();
     },
-    removeTransaction(index) {
+    deleteTransaction(index) {
       if (!confirm('Are you sure you want to delete this transaction?')) {
         return;
       }
 
       this.transactions.splice(index, 1);
+    },
+    deleteMemberFromSettings(member, index) {
+      if (
+        !member.id ||
+        this.transactions.every(
+          transaction => !this.memberIsPayer(transaction, member) && !this.memberIsConsumer(transaction, member)
+        )
+      ) {
+        this.settingsForm.members.splice(index, 1);
+
+        return;
+      }
+
+      this.settingsForm.members = this.settingsForm.members.map(loopMember =>
+        loopMember.id === member.id ? { ...loopMember, deleted: true } : loopMember
+      );
+    },
+    handleUpdateSettings() {
+      try {
+        this.settingsForm.members.forEach((member, index) => {
+          if (!member.id) {
+            this.settingsForm.members[index]['id'] = btoa(Math.random().toString()) + Date.now();
+          }
+
+          if (!member.name) {
+            throw new Error('Member must have a name');
+          }
+        });
+
+        const membersIds = this.settingsForm.members.map(member => member.id);
+
+        this.balances = Object.fromEntries(
+          Object.entries(this.balances).filter(([memberId, value]) => membersIds.includes(memberId))
+        );
+
+        this.settings = _.cloneDeep(this.settingsForm);
+
+        this.drawerShown = false;
+      } catch (err) {
+        alert(err.message);
+      }
+    },
+    deleteAllTransactions() {
+      if (!confirm('Are you sure you want to delete all transactions?')) {
+        return;
+      }
+
+      this.transactions = [];
+      this.drawerShown = false;
     },
   },
   mounted() {
