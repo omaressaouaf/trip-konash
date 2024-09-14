@@ -14,6 +14,7 @@ createApp({
       },
       transactions: [],
       balances: {},
+      transactionsComponentShown : true,
     };
   },
   watch: {

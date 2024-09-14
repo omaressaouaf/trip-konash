@@ -106,13 +106,14 @@
                     d="M6 0H2a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4v1a3 3 0 0 1-3 3H2a1 1 0 0 0 0 2h1a5.006 5.006 0 0 0 5-5V2a2 2 0 0 0-2-2Zm10 0h-4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4v1a3 3 0 0 1-3 3h-1a1 1 0 0 0 0 2h1a5.006 5.006 0 0 0 5-5V2a2 2 0 0 0-2-2Z"
                   /></svg
                 >"Have you ever had a trip with your friends and while you're making different transactions in food,
-                entertainment, etc.., you suddenly lose track of who paid for who ? well no more tripping when tripping with Trip Konash."
+                entertainment, etc.., you suddenly lose track of who paid for who ? well no more tripping when tripping
+                with Trip Konash."
               </p>
             </blockquote>
           </figure>
         </div>
-        <div class="flex flex-col md:flex-row md:justify-between mt-20 mb-10">
-          <div id="transaction-add" class="px-10 border-r border-1">
+        <div class="flex flex-col md:flex-row md:gap-20 justify-center space-y-16 md:space-y-0 mt-20 mb-10">
+          <div id="transaction-add" class="md:pe-10 border-r border-1">
             <form @submit.prevent="handleSubmit" class="min-w-[300px] md:min-w-[500px]">
               <h1 class="text-3xl text-center font-semibold text-primary mb-10 underline">
                 <i class="fa fa-file-circle-plus me-5"></i>
@@ -192,70 +193,93 @@
               </button>
             </form>
           </div>
-          <div id="transaction-list" class="px-10 flex flex-col gap-5">
-            <h1 class="text-3xl text-center font-semibold text-primary mb-10 underline">
-              <i class="fa fa-credit-card me-5"></i>
-              <span>Transactions</span>
-            </h1>
-            <div
-              v-for="(transaction, index) in transactions"
-              :key="index"
-              id="transaction-item"
-              class="rounded border shadow border-1 px-5 py-5"
-            >
-              <h3 class="text-lg font-semibold underline text-primary text-center">
-                {{transaction.title}} ({{formatMoney(paymentsTotal(transaction))}})
-              </h3>
-              <h3 class="text-md font-semibold mt-5">
-                <span class="text-secondary">Paying members</span>
-              </h3>
-              <h4 v-for="(payment, member) in transaction.payments" class="text-sm font-semibold mt-5">
-                <span class="text-sm">{{member}} ({{formatMoney(payment)}})</span>
-              </h4>
-              <h3 class="text-md font-semibold mt-5">
-                <span class="text-secondary">Consuming members</span>
-              </h3>
-              <h4 v-for="(consumptions, member) in transaction.consumptions" class="text-sm font-semibold mt-5">
-                <span class="text-sm">{{member}} ({{formatMoney(consumptions)}})</span>
-              </h4>
+          <div>
+            <div class="border-b border-gray-200 dark:border-gray-700">
+              <ul class="flex flex-wrap text-sm font-medium text-center text-gray-500 dark:text-gray-400 mt-0.5">
+                <li>
+                  <buttton
+                    class="inline-flex items-center justify-center p-4 !pt-0 border-b-2 rounded-t-lg group"
+                    :class="[transactionsComponentShown ? 'text-primary border-orange-700' : 'border-gray-100 hover:text-gray-600 hover:border-gray-300']"
+                    @click="transactionsComponentShown = true"
+                  >
+                    <i class="fa fa-credit-card me-3"></i>Transactions
+                </button>
+                </li>
+                <li>
+                  <button
+                    class="inline-flex items-center justify-center p-4 !pt-0 border-b-2 rounded-t-lg group"
+                    :class="[!transactionsComponentShown ? 'text-primary border-orange-700' : 'border-gray-100 hover:text-gray-600 hover:border-gray-300']"
+                    @click="transactionsComponentShown = false"
+                  >
+                  <i class="fa fa-dollar-sign me-3"></i>Balances
+                </button>
+                </li>
+              </ul>
             </div>
-          </div>
-          <div id="balance-list" class="px-10 flex flex-col gap-5">
-            <h1 class="text-3xl text-center font-semibold text-primary mb-10 underline">
-              <i class="fa fa-dollar-sign me-5"></i>
-              <span>Balances</span>
-            </h1>
-            <div
-              v-for="(balance, member) in balances"
-              id="balance-item"
-              class="rounded border shadow border-1 px-5 py-5"
-            >
-              <h3 class="text-lg font-semibold underline text-primary text-center">{{member}}</h3>
-              <h3 class="text-md font-semibold mt-5">
-                <span class="text-secondary">Total payments : </span>
-                <span class="text-gray-700">{{formatMoney(balance.payments)}}</span>
-              </h3>
-              <h3 class="text-md font-semibold mt-5">
-                <span class="text-secondary">Total credits : </span>
-                <span class="text-gray-700">{{formatMoney(balance.credits)}}</span>
-              </h3>
-              <h3 class="text-md font-semibold mt-5">
-                <span class="text-secondary">Total debts : </span>
-                <span class="text-gray-700">{{formatMoney(balance.debts)}}</span>
-              </h3>
-              <h3 class="text-md font-semibold mt-5">
-                <span class="text-secondary">Balance : </span>
-                <span :class="[balance.balance >= 0 ? 'text-green-500' : 'text-red-500']"
-                  >{{formatMoney(balance.balance)}}</span
-                >
-              </h3>
+            <div v-if="transactionsComponentShown" id="transaction-list" class="flex flex-col gap-5 mt-5">
+              <div v-if="!transactions.length" class="flex items-center p-4 mb-4 text-sm text-primary font-semibold rounded-lg bg-yellow-50" role="alert">
+                <i class="fa fa-credit-card me-3"></i>
+                <div>
+                  All transactins made will be listed here
+                </div>
+              </div>
+              <div
+                v-for="(transaction, index) in transactions"
+                :key="index"
+                id="transaction-item"
+                class="rounded border shadow border-1 px-5 py-5"
+              >
+                <h3 class="text-lg font-semibold underline text-primary text-center capitalize">
+                  {{transaction.title}} ({{formatMoney(paymentsTotal(transaction))}})
+                </h3>
+                <h3 class="text-md font-semibold mt-5">
+                  <span class="text-secondary">Paying members</span>
+                </h3>
+                <h4 v-for="(payment, member) in transaction.payments" class="text-sm font-semibold mt-5">
+                  <span class="text-sm">{{member}} ({{formatMoney(payment)}})</span>
+                </h4>
+                <h3 class="text-md font-semibold mt-5">
+                  <span class="text-secondary">Consuming members</span>
+                </h3>
+                <h4 v-for="(consumptions, member) in transaction.consumptions" class="text-sm font-semibold mt-5">
+                  <span class="text-sm">{{member}} ({{formatMoney(consumptions)}})</span>
+                </h4>
+              </div>
+            </div>
+            <div v-else id="balance-list" class="flex flex-col gap-5 mt-5">
+              <div
+                v-for="(balance, member) in balances"
+                id="balance-item"
+                class="rounded border shadow border-1 px-5 py-5"
+              >
+                <h3 class="text-lg font-semibold underline text-primary text-center">{{member}}</h3>
+                <h3 class="text-md font-semibold mt-5">
+                  <span class="text-secondary">Total payments : </span>
+                  <span class="text-gray-700">{{formatMoney(balance.payments)}}</span>
+                </h3>
+                <h3 class="text-md font-semibold mt-5">
+                  <span class="text-secondary">Total credits : </span>
+                  <span class="text-gray-700">{{formatMoney(balance.credits)}}</span>
+                </h3>
+                <h3 class="text-md font-semibold mt-5">
+                  <span class="text-secondary">Total debts : </span>
+                  <span class="text-gray-700">{{formatMoney(balance.debts)}}</span>
+                </h3>
+                <h3 class="text-md font-semibold mt-5">
+                  <span class="text-secondary">Balance : </span>
+                  <span :class="[balance.balance >= 0 ? 'text-green-500' : 'text-red-500']"
+                    >{{formatMoney(balance.balance)}}</span
+                  >
+                </h3>
+              </div>
             </div>
           </div>
         </div>
         <footer class="mt-auto py-10">
           <hr class="my-6 border-gray-200 sm:mx-auto dark:border-gray-700 lg:my-8" />
           <span class="block text-sm text-center">
-            © Made with ❤️ by <a href="https://www.instagram.com/omar_essaouaf/" class="underline">Omar Essaouaf</a>, Idea inspired from <a href="https://www.instagram.com/hamidlakrouni/" class="underline">Hamid Lakrouni</a>
+            © Made with ❤️ by <a href="https://www.instagram.com/omar_essaouaf/" class="underline">Omar Essaouaf</a>,
+            Idea inspired from <a href="https://www.instagram.com/hamidlakrouni/" class="underline">Hamid Lakrouni</a>
           </span>
         </footer>
       </div>
