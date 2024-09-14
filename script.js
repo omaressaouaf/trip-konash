@@ -5,7 +5,7 @@ createApp({
     return {
       settings: {
         members: ['Zdi Mohammed', 'Ba Kamal', '7amouda', 'L7aj Omar'],
-        currencySymbol : 'DHS',
+        currencySymbol: 'DHS',
       },
       form: {
         title: '',
@@ -14,7 +14,7 @@ createApp({
       },
       transactions: [],
       balances: {},
-      transactionsComponentShown : true,
+      transactionsComponentShown: true,
     };
   },
   watch: {
@@ -142,6 +142,13 @@ createApp({
       this.transactions.unshift(_.cloneDeep(this.form));
 
       this.resetForm();
+    },
+    removeTransaction(index) {
+      if (!confirm('Are you sure you want to delete this transaction?')) {
+        return;
+      }
+
+      this.transactions.splice(index, 1);
     },
   },
   mounted() {

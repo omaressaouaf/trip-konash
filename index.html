@@ -229,8 +229,15 @@
                 v-for="(transaction, index) in transactions"
                 :key="index"
                 id="transaction-item"
-                class="rounded border shadow border-1 px-5 py-5"
+                class="relative rounded-xl border shadow-xl border-1 px-5 py-5"
               >
+                <button
+                  @click="removeTransaction(index)"
+                  class="absolute inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-500 border-2 border-white rounded-full -top-1 -end-1 dark:border-gray-900"
+                >
+                  <i class="fa fa-minus"></i>
+                </button>
+
                 <h3 class="text-lg font-semibold underline text-primary text-center capitalize">
                   {{transaction.title}} ({{formatMoney(paymentsTotal(transaction))}})
                 </h3>
@@ -255,7 +262,7 @@
               <div
                 v-for="(balance, member) in balances"
                 id="balance-item"
-                class="rounded border shadow border-1 px-5 py-5"
+                class="rounded-xl border shadow-xl border-1 px-5 py-5"
               >
                 <h3 class="text-lg font-semibold underline text-primary text-center">{{member}}</h3>
                 <h3 class="text-md font-semibold mt-5">
