@@ -4,7 +4,7 @@ createApp({
   data() {
     return {
       settings: {
-        tripTitle: 'Trip #1',
+        tripTitle: '#NorthTrip',
         currencySymbol: 'DHS',
         members: [
           {
@@ -35,6 +35,7 @@ createApp({
       balances: {},
       transactionsComponentShown: true,
       drawerShown: false,
+      muteLocalStateWatchers: false,
     };
   },
   watch: {
@@ -44,15 +45,25 @@ createApp({
       deep: true,
     },
     transactions: {
-      handler: 'calculateMemberBalances',
+      handler() {
+        if (this.muteLocalStateWatchers) {
+          this.calculateMemberBalances();
+
+          localStorage.setItem('transactions', JSON.stringify(this.transactions));
+        }
+      },
       immediate: true,
       deep: true,
     },
     settings: {
       handler() {
-        this.settingsForm = _.cloneDeep(this.settings);
-        this.resetForm();
-        this.calculateMemberBalances();
+        if (this.muteLocalStateWatchers) {
+          this.settingsForm = _.cloneDeep(this.settings);
+          this.resetForm();
+          this.calculateMemberBalances();
+
+          localStorage.setItem('settings', JSON.stringify(this.settings));
+        }
       },
       immediate: true,
       deep: true,
@@ -227,6 +238,19 @@ createApp({
     },
   },
   mounted() {
+    this.muteLocalStateWatchers = true;
+
+    this.$nextTick(() => {
+      try {
+        this.transactions = JSON.parse(localStorage.getItem('transactions'));
+        this.settings = JSON.parse(localStorage.getItem('settings'));
+      } catch (err) {
+        console.log(err);
+      }
+
+      this.saveState = false;
+    });
+
     this.resetForm();
   },
 }).mount('#app');
