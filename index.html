@@ -72,13 +72,80 @@
   </head>
   <body>
     <div id="app">
+      <div class="relative z-10" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+        <div
+          v-if="drawerShown"
+          class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity ease-in-out duration-500"
+          :class="[drawerShown ? 'opacity-100' : 'opacity-0']"
+          aria-hidden="true"
+        ></div>
+
+        <div v-if="drawerShown" class="fixed inset-0 overflow-hidden">
+          <div class="absolute inset-0 overflow-hidden">
+            <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+              <div
+                class="pointer-events-auto relative w-screen max-w-md transform transition ease-in-out duration-500 sm:duration-700"
+                :class="[drawerShown ? 'translate-x-0' : 'translate-x-full']"
+              >
+                <div
+                  class="absolute left-0 top-0 -ml-8 flex pr-2 pt-4 sm:-ml-10 sm:pr-4 ease-in-out duration-500"
+                  :class="[drawerShown ? 'opacity-100' : 'opacity-0']"
+                >
+                  <button
+                    @click="drawerShown = false"
+                    type="button"
+                    class="relative rounded-md text-gray-300 focus:outline-none focus:ring-2 focus:ring-white"
+                  >
+                    <i class="fa fa-close h-8 w-8"></i>
+                  </button>
+                </div>
+
+                <div class="flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl">
+                  <div class="px-4 sm:px-6">
+                    <h2 class="text-base font-semibold leading-6 text-lg underline underline decoration-orange-700">
+                      Settings
+                    </h2>
+                  </div>
+                  <div class="relative mt-6 flex-1 px-4 sm:px-6">
+                    <form class="">
+                      <div class="mb-5">
+                        <label class="form-label mb-2">Currency symbol</label>
+                        <input
+                          class="form-control"
+                          placeholder="Enter the currency symbol"
+                          v-model="settings.currencySymbol"
+                        />
+                      </div>
+                      <div class="mb-5">
+                        <label class="form-label mb-2">Trip title</label>
+                        <input class="form-control" placeholder="Enter the trip title" v-model="settings.tripTitle" />
+                      </div>
+                      <div class="mb-5">
+                        <label class="form-label mb-2">Trip Members</label>
+                        <div v-for="(member, index) in settings.members" :key="index">
+                          <input
+                            class="form-control mb-3"
+                            placeholder="Enter the member"
+                            v-model="settings.members[index]"
+                          />
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="flex items-center justify-between px-4 md:px-[100px] 2xl:px-[300px] pt-6 md:pt-10">
         <img class="h-12 md:h-20" src="./images/logo.png" alt="logo" />
         <div class="flex items-center gap-4">
-          <button class="button button-primary">
+          <button @click="drawerShown = !drawerShown" class="button button-primary">
             <i class="fa fa-question-circle md:me-2"></i><span class="hidden md:inline">FAQs</span>
           </button>
-          <button class="button button-primary">
+          <button @click="drawerShown = !drawerShown" class="button button-primary">
             <i class="fa fa-gear md:me-2"></i><span class="hidden md:inline">Settings</span>
           </button>
         </div>
@@ -88,7 +155,7 @@
           <h1 class="text-3xl font-semibold text-center">
             No more
             <span class="bg-gradient-to-r from-green-500 via-orange-700 to-orange-950 text-transparent bg-clip-text">
-              Tripping when about who paid
+              Tripping about who paid
             </span>
             with Trip Konash
           </h1>
@@ -117,7 +184,7 @@
             <form @submit.prevent="handleSubmit" class="min-w-[300px] md:min-w-[500px]">
               <h1 class="text-3xl text-center font-semibold text-primary mb-10 underline">
                 <i class="fa fa-file-circle-plus me-5"></i>
-                <span>Add new transaction</span>
+                <span>New transaction {{settings.tripTitle ? 'in ' + settings.tripTitle : '' }}</span>
               </h1>
               <div class="mb-5">
                 <label class="form-label mb-2">Enter the product or service bought</label>
@@ -133,20 +200,20 @@
                   >Specify the members that paid for this transaction ({{formatMoney(paymentsTotal(this.form))}})</label
                 >
                 <fieldset>
-                  <div v-for="(member, index) in settings.members" key="index" class="flex items-center mb-4">
+                  <div v-for="member in nonDeletedSettingsMembers" key="member.id" class="flex items-center mb-4">
                     <input
                       @change="toggleFormPaymentForMember(member)"
                       :checked="paymentForMemberInForm(member)"
-                      :id="`payment-${member}-checkbox`"
+                      :id="`payment-${member.id}-checkbox`"
                       type="checkbox"
                       class="form-check"
                     />
-                    <label :for="`payment-${member}-checkbox`" class="form-label flex-shrink-0 ms-3">
-                      {{member}}
+                    <label :for="`payment-${member.id}-checkbox`" class="form-label flex-shrink-0 ms-3">
+                      {{member.name}}
                     </label>
                     <input
                       v-if="paymentForMemberInForm(member)"
-                      v-model="form.payments[member]"
+                      v-model="form.payments[member.id]"
                       type="number"
                       class="form-control max-w-96 ms-5"
                       placeholder="Payment"
@@ -163,20 +230,20 @@
                   ({{formatMoney(consumptionsTotal(this.form))}})</label
                 >
                 <fieldset>
-                  <div v-for="(member, index) in settings.members" key="index" class="flex items-center mb-4">
+                  <div v-for="member in nonDeletedSettingsMembers" key="member.id" class="flex items-center mb-4">
                     <input
                       @change="toggleFormConsumptionForMember(member)"
                       :checked="consumptionForMemberInForm(member)"
-                      :id="`consumption-${member}-checkbox`"
+                      :id="`consumption-${member.id}-checkbox`"
                       type="checkbox"
                       class="form-check"
                     />
-                    <label :for="`consumption-${member}-checkbox`" class="form-label flex-shrink-0 ms-3">
-                      {{member}}
+                    <label :for="`consumption-${member.id}-checkbox`" class="form-label flex-shrink-0 ms-3">
+                      {{member.name}}
                     </label>
                     <input
                       v-if="consumptionForMemberInForm(member)"
-                      v-model="form.consumptions[member]"
+                      v-model="form.consumptions[member.id]"
                       type="number"
                       class="form-control max-w-96 ms-5"
                       placeholder="Consumption"
@@ -233,7 +300,7 @@
               >
                 <button
                   @click="removeTransaction(index)"
-                  class="absolute inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-500 border-2 border-white rounded-full -top-1 -end-1 dark:border-gray-900"
+                  class="absolute inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-500 border-2 border-white rounded-full -top-1 -end-1"
                 >
                   <i class="fa fa-minus"></i>
                 </button>
@@ -245,26 +312,26 @@
                   <span class="text-secondary">Paying members</span>
                 </h3>
                 <h4
-                  v-for="(payment, member) in transaction.payments"
+                  v-for="(payment, memberId) in transaction.payments"
                   class="text-sm font-semibold mt-5 border-b border-1 border-gray-300 pb-5"
                 >
-                  <span class="text-sm">{{member}} ({{formatMoney(payment)}})</span>
+                  <span class="text-sm">{{getMemberById(memberId).name}} ({{formatMoney(payment)}})</span>
                 </h4>
                 <h3 class="text-md font-semibold mt-5">
                   <span class="text-secondary">Consuming members</span>
                 </h3>
-                <h4 v-for="(consumptions, member) in transaction.consumptions" class="text-sm font-semibold mt-5">
-                  <span class="text-sm">{{member}} ({{formatMoney(consumptions)}})</span>
+                <h4 v-for="(consumptions, memberId) in transaction.consumptions" class="text-sm font-semibold mt-5">
+                  <span class="text-sm">{{getMemberById(memberId).name}} ({{formatMoney(consumptions)}})</span>
                 </h4>
               </div>
             </div>
             <div v-else id="balance-list" class="flex flex-col gap-5 mt-5">
               <div
-                v-for="(balance, member) in balances"
+                v-for="(balance, memberId) in balances"
                 id="balance-item"
                 class="rounded-xl border shadow-xl border-1 px-5 py-5"
               >
-                <h3 class="text-lg font-semibold underline text-primary text-center">{{member}}</h3>
+                <h3 class="text-lg font-semibold underline text-primary text-center">{{getMemberById(memberId).name}}</h3>
                 <h3 class="text-md font-semibold mt-5">
                   <span class="text-secondary">Total payments made : </span>
                   <span class="text-gray-700">{{formatMoney(balance.payments)}}</span>
@@ -279,12 +346,12 @@
                 </h3>
                 <h3 class="text-md font-semibold mt-5">
                   <span :class="[balance.balance >= 0 ? 'text-green-500' : 'text-red-500']">
-                    <span v-if="balance.balance === 0">{{member}} is good</span>
+                    <span v-if="balance.balance === 0">{{getMemberById(memberId).name}} is good</span>
                     <span v-if="balance.balance > 0"
-                      >{{member}} should take {{formatMoney(balance.balance)}} from the table</span
+                      >{{getMemberById(memberId).name}} should take {{formatMoney(balance.balance)}} from the table</span
                     >
                     <span v-if="balance.balance < 0"
-                      >{{member}} should put {{formatMoney(Math.abs(balance.balance))}} in the table</span
+                      >{{getMemberById(memberId).name}} should put {{formatMoney(Math.abs(balance.balance))}} in the table</span
                     >
                   </span>
                 </h3>

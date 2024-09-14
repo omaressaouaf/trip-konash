@@ -4,8 +4,26 @@ createApp({
   data() {
     return {
       settings: {
-        members: ['Zdi Mohammed', 'Ba Kamal', '7amouda', 'L7aj Omar'],
+        tripTitle: 'Chamal Trip',
         currencySymbol: 'DHS',
+        members: [
+          {
+            id: 'zdi-1',
+            name: 'Zdi Mohammed',
+          },
+          {
+            id: 'ba-kamal',
+            name: 'Ba Kamal',
+          },
+          {
+            id: '7mouda',
+            name: '7mouda',
+          },
+          {
+            id: 'hajomar',
+            name: 'L7aj Omar',
+          },
+        ],
       },
       form: {
         title: '',
@@ -15,6 +33,7 @@ createApp({
       transactions: [],
       balances: {},
       transactionsComponentShown: true,
+      drawerShown: false,
     };
   },
   watch: {
@@ -29,6 +48,11 @@ createApp({
       deep: true,
     },
   },
+  computed: {
+    nonDeletedSettingsMembers() {
+      return this.settings.members.filter(member => !member.is_deleted);
+    },
+  },
   methods: {
     formatMoney(amount) {
       return Number(amount).toFixed(2) + ' ' + this.settings.currencySymbol;
@@ -40,8 +64,8 @@ createApp({
         consumptions: {},
       };
 
-      for (const member of this.settings.members) {
-        this.form.consumptions[member] = this.form.consumptions[member] || null;
+      for (const member of this.nonDeletedSettingsMembers) {
+        this.form.consumptions[member.id] = this.form.consumptions[member.id] || null;
       }
     },
     calculateConsumptionsBasedOnPayments() {
@@ -53,8 +77,8 @@ createApp({
 
       const consumptionPerMember = this.paymentsTotal(this.form) / consumptionsCount;
 
-      for (const member of Object.keys(this.form.consumptions)) {
-        this.form.consumptions[member] = consumptionPerMember;
+      for (const memberId of Object.keys(this.form.consumptions)) {
+        this.form.consumptions[memberId] = consumptionPerMember;
       }
     },
     paymentsTotal(transaction) {
@@ -65,46 +89,53 @@ createApp({
     },
     toggleFormConsumptionForMember(member) {
       if (this.consumptionForMemberInForm(member)) {
-        delete this.form.consumptions[member];
+        delete this.form.consumptions[member.id];
       } else {
-        this.form.consumptions[member] = null;
+        this.form.consumptions[member.id] = null;
       }
 
       this.calculateConsumptionsBasedOnPayments();
     },
     consumptionForMemberInForm(member) {
-      return typeof this.form.consumptions[member] !== 'undefined';
+      return typeof this.form.consumptions[member.id] !== 'undefined';
     },
     toggleFormPaymentForMember(member) {
       if (this.paymentForMemberInForm(member)) {
-        delete this.form.payments[member];
+        delete this.form.payments[member.id];
       } else {
-        this.form.payments[member] = null;
+        this.form.payments[member.id] = null;
       }
 
       this.calculateConsumptionsBasedOnPayments();
     },
     paymentForMemberInForm(member) {
-      return typeof this.form.payments[member] !== 'undefined';
+      return typeof this.form.payments[member.id] !== 'undefined';
     },
     memberIsPayer(transaction, member) {
-      return Object.keys(transaction.payments).includes(member);
+      return Object.keys(transaction.payments).includes(member.id);
     },
     memberIsConsumer(transaction, member) {
-      return Object.keys(transaction.consumptions).includes(member);
+      return Object.keys(transaction.consumptions).includes(member.id);
+    },
+    getMemberById(memberId) {
+      return this.settings.members.find(member => member.id == memberId);
     },
     calculateMemberBalances() {
       for (const member of this.settings.members) {
         const payments = this.transactions
           .filter(transaction => this.memberIsPayer(transaction, member))
-          .reduce((acc, transaction) => acc + transaction.payments[member], 0);
+          .reduce((acc, transaction) => acc + transaction.payments[member.id], 0);
 
         const credits = this.transactions
           .filter(transaction => this.memberIsPayer(transaction, member))
           .reduce(function (acc, transaction) {
             const consumptions = { ...transaction.consumptions };
 
-            delete consumptions[member];
+            delete consumptions[member.id];
+
+            if (!Object.keys(consumptions).length) {
+              return acc;
+            }
 
             const credit = Object.values(consumptions).reduce((acc, consumption) => acc + consumption);
 
@@ -113,11 +144,11 @@ createApp({
 
         const debts = this.transactions
           .filter(transaction => !this.memberIsPayer(transaction, member) && this.memberIsConsumer(transaction, member))
-          .reduce((acc, transaction) => acc + transaction.consumptions[member], 0);
+          .reduce((acc, transaction) => acc + transaction.consumptions[member.id], 0);
 
         const balance = credits - debts;
 
-        this.balances[member] = { member, payments, credits, debts, balance };
+        this.balances[member.id] = { payments, credits, debts, balance };
       }
     },
     handleSubmit() {
