@@ -84,7 +84,7 @@
         </div>
       </div>
       <div class="h-screen pb-20 px-4 md:px-[100px] 2xl:px-[300px]">
-        <div class="flex flex-col justify-center items-center mb-8 mt-6 md:mt-2">
+        <div class="flex flex-col justify-center items-center mb-8 mt-6 md:mt-4">
           <h1 class="text-3xl font-semibold text-center">
             No more
             <span class="bg-gradient-to-r from-green-500 via-orange-700 to-orange-950 text-transparent bg-clip-text">
@@ -197,13 +197,13 @@
             <div class="border-b border-gray-200 dark:border-gray-700">
               <ul class="flex flex-wrap text-sm font-medium text-center text-gray-500 dark:text-gray-400 mt-0.5">
                 <li>
-                  <buttton
+                  <button
                     class="inline-flex items-center justify-center p-4 !pt-0 border-b-2 rounded-t-lg group"
                     :class="[transactionsComponentShown ? 'text-primary border-orange-700' : 'border-gray-100 hover:text-gray-600 hover:border-gray-300']"
                     @click="transactionsComponentShown = true"
                   >
                     <i class="fa fa-credit-card me-3"></i>Transactions
-                </button>
+                  </button>
                 </li>
                 <li>
                   <button
@@ -211,17 +211,19 @@
                     :class="[!transactionsComponentShown ? 'text-primary border-orange-700' : 'border-gray-100 hover:text-gray-600 hover:border-gray-300']"
                     @click="transactionsComponentShown = false"
                   >
-                  <i class="fa fa-dollar-sign me-3"></i>Balances
-                </button>
+                    <i class="fa fa-dollar-sign me-3"></i>Balances
+                  </button>
                 </li>
               </ul>
             </div>
             <div v-if="transactionsComponentShown" id="transaction-list" class="flex flex-col gap-5 mt-5">
-              <div v-if="!transactions.length" class="flex items-center p-4 mb-4 text-sm text-primary font-semibold rounded-lg bg-yellow-50" role="alert">
+              <div
+                v-if="!transactions.length"
+                class="flex items-center p-4 mb-4 text-sm text-primary font-semibold rounded-lg bg-yellow-50"
+                role="alert"
+              >
                 <i class="fa fa-credit-card me-3"></i>
-                <div>
-                  All transactins made will be listed here
-                </div>
+                <div>All transactins made will be listed here</div>
               </div>
               <div
                 v-for="(transaction, index) in transactions"
@@ -235,7 +237,10 @@
                 <h3 class="text-md font-semibold mt-5">
                   <span class="text-secondary">Paying members</span>
                 </h3>
-                <h4 v-for="(payment, member) in transaction.payments" class="text-sm font-semibold mt-5 border-b border-1 border-gray-300 pb-5">
+                <h4
+                  v-for="(payment, member) in transaction.payments"
+                  class="text-sm font-semibold mt-5 border-b border-1 border-gray-300 pb-5"
+                >
                   <span class="text-sm">{{member}} ({{formatMoney(payment)}})</span>
                 </h4>
                 <h3 class="text-md font-semibold mt-5">
@@ -254,22 +259,27 @@
               >
                 <h3 class="text-lg font-semibold underline text-primary text-center">{{member}}</h3>
                 <h3 class="text-md font-semibold mt-5">
-                  <span class="text-secondary">Total payments : </span>
+                  <span class="text-secondary">Total payments made : </span>
                   <span class="text-gray-700">{{formatMoney(balance.payments)}}</span>
                 </h3>
                 <h3 class="text-md font-semibold mt-5">
-                  <span class="text-secondary">Total credits : </span>
+                  <span class="text-secondary">Total credits to others : </span>
                   <span class="text-gray-700">{{formatMoney(balance.credits)}}</span>
                 </h3>
                 <h3 class="text-md font-semibold mt-5">
-                  <span class="text-secondary">Total debts : </span>
+                  <span class="text-secondary">Total debts from others : </span>
                   <span class="text-gray-700">{{formatMoney(balance.debts)}}</span>
                 </h3>
                 <h3 class="text-md font-semibold mt-5">
-                  <span class="text-secondary">Balance : </span>
-                  <span :class="[balance.balance >= 0 ? 'text-green-500' : 'text-red-500']"
-                    >{{formatMoney(balance.balance)}}</span
-                  >
+                  <span :class="[balance.balance >= 0 ? 'text-green-500' : 'text-red-500']">
+                    <span v-if="balance.balance === 0">{{member}} is good</span>
+                    <span v-if="balance.balance > 0"
+                      >{{member}} should take {{formatMoney(balance.balance)}} from the table</span
+                    >
+                    <span v-if="balance.balance < 0"
+                      >{{member}} should put {{formatMoney(Math.abs(balance.balance))}} in the table</span
+                    >
+                  </span>
                 </h3>
               </div>
             </div>
