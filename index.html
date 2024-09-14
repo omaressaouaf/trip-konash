@@ -235,7 +235,7 @@
                 <h3 class="text-md font-semibold mt-5">
                   <span class="text-secondary">Paying members</span>
                 </h3>
-                <h4 v-for="(payment, member) in transaction.payments" class="text-sm font-semibold mt-5">
+                <h4 v-for="(payment, member) in transaction.payments" class="text-sm font-semibold mt-5 border-b border-1 border-gray-300 pb-5">
                   <span class="text-sm">{{member}} ({{formatMoney(payment)}})</span>
                 </h4>
                 <h3 class="text-md font-semibold mt-5">
