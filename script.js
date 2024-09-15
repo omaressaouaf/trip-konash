@@ -35,7 +35,6 @@ createApp({
       balances: {},
       transactionsComponentShown: true,
       drawerShown: false,
-      muteLocalStateWatchers: false,
     };
   },
   watch: {
@@ -46,26 +45,20 @@ createApp({
     },
     transactions: {
       handler() {
-        if (this.muteLocalStateWatchers) {
-          this.calculateMemberBalances();
+        this.calculateMemberBalances();
 
-          localStorage.setItem('transactions', JSON.stringify(this.transactions));
-        }
+        localStorage.setItem('transactions', JSON.stringify(this.transactions));
       },
-      immediate: true,
       deep: true,
     },
     settings: {
       handler() {
-        if (this.muteLocalStateWatchers) {
-          this.settingsForm = _.cloneDeep(this.settings);
-          this.resetForm();
-          this.calculateMemberBalances();
+        this.settingsForm = _.cloneDeep(this.settings);
+        this.resetForm();
+        this.calculateMemberBalances();
 
-          localStorage.setItem('settings', JSON.stringify(this.settings));
-        }
+        localStorage.setItem('settings', JSON.stringify(this.settings));
       },
-      immediate: true,
       deep: true,
     },
   },
@@ -238,19 +231,21 @@ createApp({
     },
   },
   mounted() {
-    this.muteLocalStateWatchers = true;
+    this.settingsForm = _.cloneDeep(this.settings);
+    this.calculateMemberBalances();
+    this.resetForm();
 
-    this.$nextTick(() => {
-      try {
-        this.transactions = JSON.parse(localStorage.getItem('transactions'));
-        this.settings = JSON.parse(localStorage.getItem('settings'));
-      } catch (err) {
-        console.log(err);
+    try {
+      const localStorageTransactions = JSON.parse(localStorage.getItem('transactions'));
+      const localStorageSettings = JSON.parse(localStorage.getItem('settings'));
+
+      if (Array.isArray(localStorageTransactions)) {
+        this.transactions = localStorageTransactions;
       }
 
-      this.saveState = false;
-    });
-
-    this.resetForm();
+      if (typeof localStorageSettings === 'object') {
+        this.settings = localStorageSettings;
+      }
+    } catch {}
   },
 }).mount('#app');
