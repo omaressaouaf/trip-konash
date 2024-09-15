@@ -243,7 +243,7 @@ createApp({
         this.transactions = localStorageTransactions;
       }
 
-      if (typeof localStorageSettings === 'object') {
+      if (typeof localStorageSettings === 'object' && localStorageSettings.tripTitle) {
         this.settings = localStorageSettings;
       }
     } catch {}
