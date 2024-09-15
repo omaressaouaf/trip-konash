@@ -231,10 +231,6 @@ createApp({
     },
   },
   mounted() {
-    this.settingsForm = _.cloneDeep(this.settings);
-    this.calculateMemberBalances();
-    this.resetForm();
-
     try {
       const localStorageTransactions = JSON.parse(localStorage.getItem('transactions'));
       const localStorageSettings = JSON.parse(localStorage.getItem('settings'));
@@ -246,6 +242,12 @@ createApp({
       if (typeof localStorageSettings === 'object' && localStorageSettings.tripTitle) {
         this.settings = localStorageSettings;
       }
-    } catch {}
+    } catch (err) {
+      alert(err);
+    }
+
+    this.settingsForm = _.cloneDeep(this.settings);
+    this.calculateMemberBalances();
+    this.resetForm();
   },
 }).mount('#app');
