@@ -140,14 +140,31 @@ createApp({
           .filter(transaction => this.memberIsPayer(transaction, member))
           .reduce((acc, transaction) => acc + transaction.payments[member.id], 0);
 
-        const balance = this.transactions.reduce(function (acc, transaction) {
+        const credits = this.transactions.reduce(function (acc, transaction) {
           const transactionBalance =
             (transaction.payments[member.id] || 0) - (transaction.consumptions[member.id] || 0);
+
+          if (transactionBalance <= 0) {
+            return acc;
+          }
 
           return acc + transactionBalance;
         }, 0);
 
-        this.balances[member.id] = { payments, balance };
+        const debts = this.transactions.reduce(function (acc, transaction) {
+          const transactionBalance =
+            (transaction.payments[member.id] || 0) - (transaction.consumptions[member.id] || 0);
+
+          if (transactionBalance >= 0) {
+            return acc;
+          }
+
+          return acc + Math.abs(transactionBalance);
+        }, 0);
+
+        const balance = credits - debts;
+
+        this.balances[member.id] = { payments, credits, debts, balance };
       }
     },
     handleSubmit() {
@@ -239,7 +256,7 @@ createApp({
         this.transactions = localStorageTransactions;
       }
 
-      if (typeof localStorageSettings === 'object' && localStorageSettings.tripTitle) {
+      if (typeof localStorageSettings === 'object' && localStorageSettings?.tripTitle) {
         this.settings = localStorageSettings;
       }
     } catch (err) {
