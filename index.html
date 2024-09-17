@@ -136,7 +136,7 @@
                           <input
                             class="form-control mb-3"
                             placeholder="Enter the member"
-                            v-model="settingsForm.members[settingsForm.members.findIndex(loopMember => loopMember.id === member.id)].name"
+                            v-model="settingsForm.members[index].name"
                             required
                           />
                           <button
@@ -439,6 +439,10 @@
                 <h3 class="text-md font-semibold mt-5">
                   <span class="text-secondary">Total payments made : </span>
                   <span class="text-gray-700">{{formatMoney(balance.payments)}}</span>
+                </h3>
+                <h3 class="text-md font-semibold mt-5">
+                  <span class="text-secondary">Total consumptions : </span>
+                  <span class="text-gray-700">{{formatMoney(balance.consumptions)}}</span>
                 </h3>
                 <h3 class="text-md font-semibold mt-5">
                   <span class="text-secondary">Total credits to others : </span>

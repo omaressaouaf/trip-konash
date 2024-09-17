@@ -140,6 +140,10 @@ createApp({
           .filter(transaction => this.memberIsPayer(transaction, member))
           .reduce((acc, transaction) => acc + transaction.payments[member.id], 0);
 
+        const consumptions = this.transactions.reduce(function (acc, transaction) {
+          return acc + (transaction.consumptions[member.id] || 0);
+        }, 0);
+
         const credits = this.transactions.reduce(function (acc, transaction) {
           const transactionBalance =
             (transaction.payments[member.id] || 0) - (transaction.consumptions[member.id] || 0);
@@ -164,7 +168,7 @@ createApp({
 
         const balance = credits - debts;
 
-        this.balances[member.id] = { payments, credits, debts, balance };
+        this.balances[member.id] = { payments, consumptions, credits, debts, balance };
       }
     },
     handleSubmit() {
