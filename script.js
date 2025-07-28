@@ -79,7 +79,8 @@ createApp({
       };
 
       for (const member of this.nonDeletedSettingsMembers) {
-        this.form.consumptions[member.id] = this.form.consumptions[member.id] || null;
+        this.form.consumptions[member.id] =
+          this.form.consumptions[member.id] || null;
       }
     },
     calculateConsumptionsBasedOnPayments() {
@@ -89,17 +90,24 @@ createApp({
         return;
       }
 
-      const consumptionPerMember = this.paymentsTotal(this.form) / consumptionsCount;
+      const consumptionPerMember =
+        this.paymentsTotal(this.form) / consumptionsCount;
 
       for (const memberId of Object.keys(this.form.consumptions)) {
         this.form.consumptions[memberId] = consumptionPerMember;
       }
     },
     paymentsTotal(transaction) {
-      return Object.values(transaction.payments).reduce((acc, payment) => acc + (payment || 0), 0);
+      return Object.values(transaction.payments).reduce(
+        (acc, payment) => acc + (payment || 0),
+        0,
+      );
     },
     consumptionsTotal(transaction) {
-      return Object.values(transaction.consumptions).reduce((acc, consumption) => acc + (consumption || 0), 0);
+      return Object.values(transaction.consumptions).reduce(
+        (acc, consumption) => acc + (consumption || 0),
+        0,
+      );
     },
     toggleFormConsumptionForMember(member) {
       if (this.consumptionForMemberInForm(member)) {
@@ -138,7 +146,10 @@ createApp({
       for (const member of this.settings.members) {
         const payments = this.transactions
           .filter(transaction => this.memberIsPayer(transaction, member))
-          .reduce((acc, transaction) => acc + transaction.payments[member.id], 0);
+          .reduce(
+            (acc, transaction) => acc + transaction.payments[member.id],
+            0,
+          );
 
         const consumptions = this.transactions
           .filter(transaction => this.memberIsConsumer(transaction, member))
@@ -148,7 +159,8 @@ createApp({
 
         const credits = this.transactions.reduce(function (acc, transaction) {
           const transactionBalance =
-            (transaction.payments[member.id] || 0) - (transaction.consumptions[member.id] || 0);
+            (transaction.payments[member.id] || 0) -
+            (transaction.consumptions[member.id] || 0);
 
           if (transactionBalance <= 0) {
             return acc;
@@ -159,7 +171,8 @@ createApp({
 
         const debts = this.transactions.reduce(function (acc, transaction) {
           const transactionBalance =
-            (transaction.payments[member.id] || 0) - (transaction.consumptions[member.id] || 0);
+            (transaction.payments[member.id] || 0) -
+            (transaction.consumptions[member.id] || 0);
 
           if (transactionBalance >= 0) {
             return acc;
@@ -170,25 +183,46 @@ createApp({
 
         const balance = credits - debts;
 
-        this.balances[member.id] = { payments, consumptions, credits, debts, balance };
+        this.balances[member.id] = {
+          payments,
+          consumptions,
+          credits,
+          debts,
+          balance,
+        };
       }
     },
     handleSubmit() {
-      if (this.paymentsTotal(this.form) === 0 || Object.values(this.form.payments).some(payment => !payment)) {
+      const paymentsTotal = this.paymentsTotal(this.form);
+      const consumptionsTotal = this.consumptionsTotal(this.form);
+
+      if (
+        paymentsTotal === 0 ||
+        Object.values(this.form.payments).some(payment => !payment)
+      ) {
         alert('The payments are not set');
         return;
       }
 
       if (
-        this.consumptionsTotal(this.form) === 0 ||
+        consumptionsTotal === 0 ||
         Object.values(this.form.consumptions).some(consumption => !consumption)
       ) {
         alert('The consumptions are not set');
         return;
       }
 
-      if (this.paymentsTotal(this.form) !== this.consumptionsTotal(this.form)) {
-        alert('The total payments does not equal the total consumptions, make sure to set the correct values');
+      const EPSILON = 1e-10;
+      const paymentsEqualsConsumptions =
+        Math.abs(
+          paymentsTotal - consumptionsTotal,
+        ) < EPSILON;
+      if (
+        !paymentsEqualsConsumptions &&
+        !confirm(
+          `The total payments ${paymentsTotal} differs far from the total consumptions ${consumptionsTotal}, are you sure you want to proceed?`,
+        )
+      ) {
         return;
       }
 
@@ -207,7 +241,9 @@ createApp({
       if (
         !member.id ||
         this.transactions.every(
-          transaction => !this.memberIsPayer(transaction, member) && !this.memberIsConsumer(transaction, member)
+          transaction =>
+            !this.memberIsPayer(transaction, member) &&
+            !this.memberIsConsumer(transaction, member),
         )
       ) {
         this.settingsForm.members.splice(index, 1);
@@ -216,14 +252,17 @@ createApp({
       }
 
       this.settingsForm.members = this.settingsForm.members.map(loopMember =>
-        loopMember.id === member.id ? { ...loopMember, deleted: true } : loopMember
+        loopMember.id === member.id
+          ? { ...loopMember, deleted: true }
+          : loopMember,
       );
     },
     handleUpdateSettings() {
       try {
         this.settingsForm.members.forEach((member, index) => {
           if (!member.id) {
-            this.settingsForm.members[index]['id'] = btoa(Math.random().toString()) + Date.now();
+            this.settingsForm.members[index]['id'] =
+              btoa(Math.random().toString()) + Date.now();
           }
 
           if (!member.name) {
@@ -234,7 +273,9 @@ createApp({
         const membersIds = this.settingsForm.members.map(member => member.id);
 
         this.balances = Object.fromEntries(
-          Object.entries(this.balances).filter(([memberId, value]) => membersIds.includes(memberId))
+          Object.entries(this.balances).filter(([memberId, value]) =>
+            membersIds.includes(memberId),
+          ),
         );
 
         this.settings = _.cloneDeep(this.settingsForm);
@@ -255,14 +296,19 @@ createApp({
   },
   mounted() {
     try {
-      const localStorageTransactions = JSON.parse(localStorage.getItem('transactions'));
+      const localStorageTransactions = JSON.parse(
+        localStorage.getItem('transactions'),
+      );
       const localStorageSettings = JSON.parse(localStorage.getItem('settings'));
 
       if (Array.isArray(localStorageTransactions)) {
         this.transactions = localStorageTransactions;
       }
 
-      if (typeof localStorageSettings === 'object' && localStorageSettings?.tripTitle) {
+      if (
+        typeof localStorageSettings === 'object' &&
+        localStorageSettings?.tripTitle
+      ) {
         this.settings = localStorageSettings;
       }
     } catch (err) {
